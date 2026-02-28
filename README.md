@@ -1,21 +1,18 @@
 # Watermark Detection and Removal Pipeline
 
-An open-source image processing pipeline for detecting and removing watermarks from high volumes of images, with optional upscaling support. This project has been engineered to be highly modular, scalable, and maintainable, satisfying the long-term vision described in the Terms of Reference while providing a functional MVP using OpenCV.
+An open-source image processing pipeline for detecting and removing watermarks from high volumes of images, with optional upscaling support.
 
-## Architecture & Scalability
-The project is set up using a modular architecture that separates detection, removal, and upscaling into independent, interchangeable components.
+## Architecture
+- **`src/core/pipeline.py`**: Orchestrates loading, detection, removal, optional upscaling, and saving.
+- **`src/modules/detection/watermark_anything.py`**: AI watermark localization using Facebook Research's `watermark-anything` model.
+- **`src/modules/removal/rem_wm.py`**: Inpainting/removal through `rem-wm` (`lama_cleaner`) using the detector-generated mask.
+- **`config.yaml`**: Data-driven configuration to swap modules and tune thresholds/runtime settings.
 
-- **`src/core/pipeline.py`**: The central orchestrator that manages loading, processing, and saving images. It natively uses `concurrent.futures.ProcessPoolExecutor` to ensure high throughput and utilize multi-core CPUs for batch processing.
-- **`src/modules/`**: Contains base interfaces (`BaseDetector`, `BaseRemover`, `BaseUpscaler`) and their respective implementations. 
-- **`config.yaml`**: The pipeline is fully data-driven. Using a configuration file makes deploying, tweaking parameters, and swapping out models (e.g., from OpenCV to AI models) seamless.
-
-## Minimum Viable Product (MVP) Implementations
-The current "basics" focus on establishing the end-to-end framework, powered by OpenCV fallbacks to minimize dependencies:
-- **Detection**: Template Matching (`TemplateMatcherDetector`), optimized with scale pyramids.
-- **Removal**: Telea inpainting (`OpenCVInpaintRemover`) as a CPU-based restoration method.
-- **Upscaling**: OpenCV bicubic interpolation (`OpenCVUpscaler`).
-
-*The abstraction leaves explicit room to easily slot in models like `lama-cleaner` (LaMa) or `Real-ESRGAN` in the future without rewiring the application logic.*
+## Detection and Removal Flow
+1. Input image is passed to **Watermark Anything** for mask prediction.
+2. The predicted mask is upsampled back to original image size and binarized.
+3. The binary mask is normalized to `uint8` `[0, 255]` before being passed to **rem-wm**.
+4. `rem-wm` inpaints watermark regions and returns the cleaned image.
 
 ## Requirements
 - Python 3.10+
@@ -25,8 +22,13 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+## Setup notes
+- Ensure `external/watermark-anything` exists (the pipeline expects this path by default).
+- On first run, the detector downloads `wam_mit.pth` automatically to `external/watermark-anything/checkpoints/` if it is missing.
+- Ensure `external/rem-wm` is available and install its own dependencies.
+
 ## Usage
-Run the pipeline with the default configuration (`config.yaml`):
+Run the pipeline with default configuration (`config.yaml`):
 ```bash
 python main.py
 ```
@@ -36,7 +38,7 @@ Provide a custom configuration file:
 python main.py --config custom_config.yaml
 ```
 
-Override specific config parameters via CLI:
+Override specific parameters via CLI:
 ```bash
 python main.py --input ./data/input --output ./data/output --workers 8
 ```

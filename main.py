@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 
 from src.utils.logger import logger
-from src.modules.detection.template_matcher import TemplateMatcherDetector
+from src.modules.detection.watermark_anything import WatermarkAnythingDetector
 from src.core.pipeline import WatermarkPipeline
 
 def load_config(config_path: str) -> dict:
@@ -20,10 +20,17 @@ def build_pipeline(config: dict) -> WatermarkPipeline:
     
     # 1. Setup Detector module
     det_config = config.get("detection", {})
-    if det_config.get("method") == "template_matching":
-        detector = TemplateMatcherDetector(
-            template_path=det_config.get("template_path", "data/template.png"),
-            threshold=det_config.get("threshold", 0.8)
+    if det_config.get("method") == "watermark-anything":
+        detector = WatermarkAnythingDetector(
+            model_root=det_config.get("model_root", "external/watermark-anything"),
+            checkpoint_url=det_config.get(
+                "checkpoint_url",
+                "https://dl.fbaipublicfiles.com/watermark_anything/wam_mit.pth",
+            ),
+            checkpoint_path=det_config.get("checkpoint_path", "checkpoints/wam_mit.pth"),
+            params_path=det_config.get("params_path", "checkpoints/params.json"),
+            mask_threshold=det_config.get("mask_threshold", 0.5),
+            use_gpu=det_config.get("use_gpu", False),
         )
     else:
         raise ValueError(f"Unknown detection method configured: {det_config.get('method')}")

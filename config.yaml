@@ -6,9 +6,13 @@ pipeline:
   num_workers: 1
 
 detection:
-  method: "template_matching"
-  template_path: "data/template.png"
-  threshold: 0.2
+  method: "watermark-anything"
+  model_root: "external/watermark-anything"
+  checkpoint_path: "checkpoints/wam_mit.pth"
+  params_path: "checkpoints/params.json"
+  checkpoint_url: "https://dl.fbaipublicfiles.com/watermark_anything/wam_mit.pth"
+  mask_threshold: 0.5
+  use_gpu: false
 
 removal:
   method: "rem-wm"
