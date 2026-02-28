@@ -39,18 +39,14 @@ class WatermarkAnythingDetector(BaseDetector):
             sys.path.insert(0, str(self.model_root))
 
         from watermark_anything.augmentation.augmenter import Augmenter
-        from watermark_anything.data.transforms import default_transform, normalize_img, unnormalize_img
+        from watermark_anything.data.transforms import default_transform
         from watermark_anything.models import Wam, build_embedder, build_extractor
-        from watermark_anything.modules.jnd import JND
 
         self.default_transform = default_transform
-        self.normalize_img = normalize_img
-        self.unnormalize_img = unnormalize_img
         self.Wam = Wam
         self.build_embedder = build_embedder
         self.build_extractor = build_extractor
         self.Augmenter = Augmenter
-        self.JND = JND
 
         self.model = self._load_model().to(self.device).eval()
         logger.info(f"Initialized WatermarkAnythingDetector on {self.device.type}")
@@ -83,7 +79,6 @@ class WatermarkAnythingDetector(BaseDetector):
         embedder_cfg = omegaconf.OmegaConf.load(self.model_root / args.embedder_config)
         extractor_cfg = omegaconf.OmegaConf.load(self.model_root / args.extractor_config)
         augmenter_cfg = omegaconf.OmegaConf.load(self.model_root / args.augmentation_config)
-        attenuation_cfg = omegaconf.OmegaConf.load(self.model_root / args.attenuation_config)
 
         embedder = self.build_embedder(args.embedder_model, embedder_cfg[args.embedder_model], args.nbits)
         extractor = self.build_extractor(
@@ -94,20 +89,11 @@ class WatermarkAnythingDetector(BaseDetector):
         )
         augmenter = self.Augmenter(**augmenter_cfg)
 
-        attenuation = None
-        attenuation_name = getattr(args, "attenuation", None)
-        if attenuation_name and attenuation_name in attenuation_cfg:
-            attenuation = self.JND(
-                **attenuation_cfg[attenuation_name],
-                preprocess=self.unnormalize_img,
-                postprocess=self.normalize_img,
-            )
-
         model = self.Wam(
             embedder,
             extractor,
             augmenter,
-            attenuation=attenuation,
+            attenuation=None,
             scaling_w=args.scaling_w,
             scaling_i=args.scaling_i,
             roll_probability=getattr(args, "roll_probability", 0),
