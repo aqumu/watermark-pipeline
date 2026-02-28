@@ -33,7 +33,16 @@ class RemWMRemover(BaseRemover):
         
         if len(mask.shape) == 3:
             mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
-            
+
+        if mask.dtype != np.uint8:
+            mask = np.clip(mask, 0, 255).astype(np.uint8)
+
+        if mask.max() <= 1:
+            mask = (mask * 255).astype(np.uint8)
+
+        _, mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+        mask = np.ascontiguousarray(mask)
+
         config = self.Config(
             ldm_steps=15,
             ldm_sampler=self.LDMSampler.ddim,
@@ -43,5 +52,6 @@ class RemWMRemover(BaseRemover):
             hd_strategy_resize_limit=self.resize_limit,
         )
         
-        result = self.model_manager(image_rgb, mask, config)
-        return result
+        result_rgb = self.model_manager(image_rgb, mask, config)
+        result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
+        return result_bgr
