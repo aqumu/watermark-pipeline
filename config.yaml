@@ -1,0 +1,27 @@
+# Watermark Pipeline Configuration
+
+pipeline:
+  input_dir: "data/input"
+  output_dir: "data/output"
+  num_workers: 1
+
+detection:
+  method: "template_matching"
+  template_path: "data/template.png"
+  threshold: 0.2
+
+removal:
+  method: "rem-wm"
+  path: "external/rem-wm"
+  use_gpu: false
+  resize_limit: 800
+
+upscaling:
+  enabled: false
+  method: "real-esrgan"
+  path: "external/Real-ESRGAN"
+  model_name: "RealESRGAN_x2plus"
+  scale_factor: 2.0
+  use_gpu: false
+  tile: 400
+  tile_pad: 10

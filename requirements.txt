@@ -1,0 +1,13 @@
+PyYAML>=6.0.1
+opencv-python>=4.8.0
+numpy>=1.24.0
+pydantic
+torch
+torchvision
+transformers
+diffusers
+loguru
+scikit-image
+basicsr @ git+https://github.com/Disty0/BasicSR.git
+facexlib
+gfpgan
